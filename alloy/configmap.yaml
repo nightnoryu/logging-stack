@@ -22,6 +22,18 @@ data:
         regex         = sys.env("NODE_NAME")
         action        = "keep"
       }
+      // skip pods with no log files on disk (not running)
+      rule {
+        source_labels = ["__meta_kubernetes_pod_phase"]
+        regex         = "Pending|Succeeded|Failed|Completed|Unknown"
+        action        = "drop"
+      }
+      // skip pods whose container has no running instance yet
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_id"]
+        regex         = ""
+        action        = "drop"
+      }
       rule {
         source_labels = ["__meta_kubernetes_namespace"]
         target_label  = "namespace"
