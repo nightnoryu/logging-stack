@@ -46,24 +46,31 @@ spec:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
               readOnly: true
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            failureThreshold: 30
+            periodSeconds: 5
           livenessProbe:
             httpGet:
-              path: /livez
+              path: /api/health
               port: 3000
-            initialDelaySeconds: 60
-            timeoutSeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /api/health
               port: 3000
-            initialDelaySeconds: 10
+            periodSeconds: 10
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 50m
-              memory: 96Mi
+              cpu: 100m
+              memory: 256Mi
             limits:
-              memory: 192Mi
+              memory: 512Mi
       volumes:
         - name: data
           persistentVolumeClaim:
