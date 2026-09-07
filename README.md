@@ -1,6 +1,6 @@
 # Logging Stack
 
-Logging stack I use for my side projects.
+Self-hosted logging stack for my side projects - Grafana, Loki and Alloy.
 
 ## 📦 Components
 
