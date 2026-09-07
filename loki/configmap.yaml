@@ -44,12 +44,12 @@ data:
       delete_request_store: filesystem
 
     limits_config:
-      retention_period: 14d
+      retention_period: 7d
 
-      ingestion_rate_mb: 8
-      ingestion_burst_size_mb: 16
+      ingestion_rate_mb: 4
+      ingestion_burst_size_mb: 8
 
-      max_query_parallelism: 16
+      max_query_parallelism: 4
 
       reject_old_samples: true
       reject_old_samples_max_age: 168h
