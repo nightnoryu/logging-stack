@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: alloy
+  labels:
+    app: alloy
+spec:
+  selector:
+    matchLabels:
+      app: alloy
+  template:
+    metadata:
+      labels:
+        app: alloy
+    spec:
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.11.3
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: pods
+              mountPath: /var/log/pods
+      volumes:
+        - name: pods
+          hostPath:
+            path: /var/log/pods
