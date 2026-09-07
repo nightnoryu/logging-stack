@@ -2,7 +2,7 @@
 
 Logging stack I use for my side projects.
 
-## Components
+## 📦 Components
 
 | Component | Kind | Image | Notes |
 |-----------|------|-------|-------|
@@ -14,7 +14,7 @@ Everything is deployed into the `monitoring` namespace. The Grafana ingress depe
 Traefik cert resolver named `default` - this can be set up automatically via
 [ansible-k3s](https://github.com/nightnoryu/ansible-k3s).
 
-## Secrets
+## 🔐 Secrets
 
 Grafana admin credentials live in `grafana/secret.enc.yaml`, encrypted with
 [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age). The
@@ -49,7 +49,7 @@ sops --encrypt --in-place grafana/secret.enc.yaml
 Later edits go through `sops grafana/secret.enc.yaml` (with `SOPS_AGE_KEY` still exported).
 Keep `age.key` out of git - it is your decryption key.
 
-## Deploy
+## 🚀 Deploy
 
 ### Prerequisites
 
