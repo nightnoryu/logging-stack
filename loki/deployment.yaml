@@ -6,6 +6,8 @@ metadata:
     app: loki
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: loki
@@ -14,6 +16,10 @@ spec:
       labels:
         app: loki
     spec:
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: loki
           image: grafana/loki:3.5.5
@@ -21,7 +27,10 @@ spec:
           args:
             - -config.file=/etc/loki/config.yaml
           ports:
-            - containerPort: 3100
+            - name: http
+              containerPort: 3100
+            - name: grpc
+              containerPort: 9096
           volumeMounts:
             - name: config
               mountPath: /etc/loki
@@ -39,6 +48,12 @@ spec:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
       volumes:
         - name: config
           configMap:
