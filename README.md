@@ -4,15 +4,34 @@ Self-hosted logging stack for my side projects - Grafana, Loki and Alloy.
 
 ## 📦 Components
 
-| Component | Kind | Image | Notes |
-|-----------|------|-------|-------|
-| `alloy` | DaemonSet | `grafana/alloy:v1.11.3` | Tails `/var/log/pods` on each node, parses CRI log lines, pushes to Loki, runs on every node (`tolerations: Exists`) |
-| `loki` | Deployment (1 replica) | `grafana/loki:3.5.5` | Single-binary mode, `auth_enabled: false`, filesystem storage on a PVC, 7d retention |
-| `grafana` | Deployment (1 replica) | `grafana/grafana:13.1` | Loki pre-provisioned as the default datasource, PVC for state, admin credentials from a SOPS-encrypted secret |
+| Component | Kind                   | Image                   | Notes                                                                                        |
+|-----------|------------------------|-------------------------|----------------------------------------------------------------------------------------------|
+| `alloy`   | DaemonSet              | `grafana/alloy:v1.11.3` | Tails `/var/log/pods` on each node, parses CRI log lines, pushes to Loki, runs on every node |
+| `loki`    | Deployment (1 replica) | `grafana/loki:3.5.5`    | Single-binary mode, `auth_enabled: false`, filesystem storage on a PVC, 7d retention         |
+| `grafana` | Deployment (1 replica) | `grafana/grafana:13.1`  | Loki pre-provisioned as the default datasource, PVC for state, and an edge BasicAuth gate    |
 
 Everything is deployed into the `monitoring` namespace. The Grafana ingress depends on a
 Traefik cert resolver named `default` - this can be set up automatically via
 [ansible-k3s](https://github.com/nightnoryu/ansible-k3s).
+
+### Grafana access protection
+
+The public Grafana ingress uses the `grafana-protection` Traefik middleware chain. Requests are
+rate-limited, capped, and then challenged with HTTP BasicAuth.
+
+The BasicAuth user entry is the `users` field of the `grafana-credentials` Secret and is stored
+encrypted in `grafana/secret.enc.yaml`.
+
+When changing the Grafana admin password, regenerate the BasicAuth entry as well. The `users`
+value must be a single `username:htpasswd-hash` line, for example one generated with:
+
+```sh
+htpasswd -nbB admin 'your-new-password'
+```
+
+Paste that line as `stringData.users` while editing `grafana/secret.enc.yaml` through SOPS. For
+an existing Grafana installation, rotate its stored administrator password through Grafana too;
+`GF_SECURITY_ADMIN_PASSWORD` only initializes a fresh Grafana database.
 
 ## 🔐 Secrets
 
@@ -41,6 +60,8 @@ type: Opaque
 stringData:
   GF_SECURITY_ADMIN_USER: admin
   GF_SECURITY_ADMIN_PASSWORD: change-me
+  # Generate with: htpasswd -nbB admin 'change-me'
+  users: admin:$2y$...htpasswd-hash...
 EOF
 export SOPS_AGE_KEY=$(cat age.key)
 sops --encrypt --in-place grafana/secret.enc.yaml
