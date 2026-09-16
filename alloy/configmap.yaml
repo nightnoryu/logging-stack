@@ -84,7 +84,7 @@ data:
     loki.process "app" {
       stage.json {
         expressions = {
-          time = "time"
+          time = "time",
         }
       }
 
