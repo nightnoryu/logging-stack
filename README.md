@@ -19,6 +19,9 @@ Traefik cert resolver named `default` - this can be set up automatically via
 The public Grafana ingress uses the `grafana-protection` Traefik middleware chain. Requests are
 rate-limited, capped, and then challenged with HTTP BasicAuth.
 
+The rate limiter permits 100 requests per second per client IP, with a burst of 200 requests.
+The chain also caps concurrent in-flight requests at 20.
+
 The BasicAuth user entry is the sole data field, `users`, of the
 `grafana-basic-auth-credentials` Secret and is stored encrypted in
 `grafana/basic-auth-secret.enc.yaml`. Keeping it separate from the Grafana admin credentials is
