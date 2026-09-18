@@ -1,18 +1,71 @@
 # Logging Stack
 
-Self-hosted logging stack for my side projects - Grafana, Loki and Alloy.
+Self-hosted observability stack for my side projects - Grafana, Loki, Alloy and Prometheus.
 
 ## 📦 Components
 
-| Component | Kind                   | Image                   | Notes                                                                                        |
-|-----------|------------------------|-------------------------|----------------------------------------------------------------------------------------------|
-| `alloy`   | DaemonSet              | `grafana/alloy:v1.11.3` | Tails `/var/log/pods` on each node, parses CRI log lines, pushes to Loki, runs on every node |
-| `loki`    | Deployment (1 replica) | `grafana/loki:3.5.5`    | Single-binary mode, `auth_enabled: false`, filesystem storage on a PVC, 7d retention         |
-| `grafana` | Deployment (1 replica) | `grafana/grafana:13.1`  | Loki pre-provisioned as the default datasource, PVC for state, and an edge BasicAuth gate    |
+| Component    | Kind                   | Image                    | Notes                                                                                         |
+|--------------|------------------------|--------------------------|-----------------------------------------------------------------------------------------------|
+| `alloy`      | DaemonSet              | `grafana/alloy:v1.11.3`  | Tails `/var/log/pods` on each node, parses CRI log lines, pushes to Loki, runs on every node  |
+| `loki`       | Deployment (1 replica) | `grafana/loki:3.5.5`     | Single-binary mode, `auth_enabled: false`, filesystem storage on a PVC, 7d retention          |
+| `grafana`    | Deployment (1 replica) | `grafana/grafana:13.2.2` | Loki and Prometheus pre-provisioned as datasources, PVC for state, and an edge BasicAuth gate |
+| `prometheus` | Deployment (1 replica) | `prom/prometheus:v3.5.0` | Scrapes opt-in pod metric endpoints in every namespace, with a 7d local retention period      |
 
 Everything is deployed into the `monitoring` namespace. The Grafana ingress depends on a
 Traefik cert resolver named `default` - this can be set up automatically via
 [ansible-k3s](https://github.com/nightnoryu/ansible-k3s).
+
+### Metrics from other projects and namespaces
+
+Prometheus discovers **pods**, rather than Deployment objects, in every namespace in this
+Kubernetes cluster. A workload is only scraped when its pod template opts in with the annotations
+below.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: another-project
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics       # optional; this is Prometheus's default
+        prometheus.io/port: "8080"         # the container's metrics port
+        # prometheus.io/scheme: https      # optional; defaults to http
+```
+
+The application must serve Prometheus-format metrics on the specified port and bind to the pod
+network interface.
+
+If the target namespace uses a `NetworkPolicy` with ingress isolation, allow traffic from the
+Prometheus pods in `monitoring` to the metrics port. For example, add this ingress rule to the
+target's policy (or create a separate policy for that port):
+
+```yaml
+ingress:
+  - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring
+        podSelector:
+          matchLabels:
+            app: prometheus
+    ports:
+      - protocol: TCP
+        port: 8080
+```
+
+The Prometheus Targets page is available locally with:
+
+```sh
+kubectl -n monitoring port-forward service/prometheus 9090:9090
+```
+
+Then visit `http://localhost:9090/targets`. The `kubernetes-pods` job shows any failed discovery
+or scrape with its error message.
 
 ### Grafana access protection
 
@@ -114,4 +167,5 @@ kustomize build --enable-alpha-plugins --enable-exec . | kubectl apply -f -
 kubectl rollout status daemonset/alloy    -n monitoring --timeout=300s
 kubectl rollout status deployment/loki    -n monitoring --timeout=300s
 kubectl rollout status deployment/grafana -n monitoring --timeout=300s
+kubectl rollout status deployment/prometheus -n monitoring --timeout=300s
 ```
