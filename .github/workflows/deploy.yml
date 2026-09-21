@@ -34,4 +34,5 @@ jobs:
         run: |
           kubectl rollout status daemonset/alloy -n monitoring --timeout=300s
           kubectl rollout status deployment/loki -n monitoring --timeout=300s
+          kubectl rollout status deployment/prometheus -n monitoring --timeout=300s
           kubectl rollout status deployment/grafana -n monitoring --timeout=300s
