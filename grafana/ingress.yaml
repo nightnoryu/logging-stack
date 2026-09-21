@@ -4,8 +4,8 @@ metadata:
   name: grafana
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
     traefik.ingress.kubernetes.io/router.middlewares: monitoring-grafana-protection@kubernetescrd
-    traefik.ingress.kubernetes.io/router.tls.certresolver: default
 spec:
   ingressClassName: traefik
   rules:
