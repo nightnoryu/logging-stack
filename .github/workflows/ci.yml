@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+    paths: &manifest-paths
+      - 'alloy/**'
+      - 'loki/**'
+      - 'prometheus/**'
+      - '.github/workflows/ci.yml'
+  push:
+    branches: [ main ]
+    paths: *manifest-paths
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifests:
+    name: Validate ${{ matrix.directory }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Root includes grafana, which requires ksops
+        directory: [alloy, loki, prometheus]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v5.1.0
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+            | tar -xz kubeconform
+          sudo mv kubeconform /usr/local/bin/kubeconform
+
+      - name: Validate manifests
+        run: |
+          kubectl kustomize "${{ matrix.directory }}" | kubeconform -strict -summary -ignore-missing-schemas
