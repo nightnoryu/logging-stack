@@ -23,6 +23,15 @@ route. This permission also grants broad access to kubelet APIs, so protect the 
 account token. K3s exposes metrics from other embedded components on the same endpoint, so the job
 keeps only `kubelet_*` metrics. The Targets page shows one kubelet target per node.
 
+The `local-path-pvc-exporter` DaemonSet reports `local_path_pvc_used_bytes` for PVC directories
+under `/var/lib/rancher/k3s/storage` on each node. It measures allocated disk blocks, like `du`,
+and labels each series with `pvc_namespace`, `persistentvolumeclaim`, and `node`. Use this metric for
+directory usage: on local-path volumes, `kubelet_volume_stats_used_bytes` can report usage of the
+shared node filesystem instead. If K3s uses a different local-path storage directory, update the
+exporter's hostPath mount. The existing pod scrape job discovers the exporter automatically. The
+exporter runs as root with `DAC_OVERRIDE` to traverse private PVC directories; its host storage
+mount is read-only and it has no Kubernetes service account token.
+
 Prometheus discovers **pods**, rather than Deployment objects, in every namespace in this
 Kubernetes cluster. A workload is only scraped when its pod template opts in with the annotations
 below.

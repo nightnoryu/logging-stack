@@ -4,6 +4,12 @@ kind: Kustomization
 resources:
   - configmap.yaml
   - deployment.yaml
+  - local-path-pvc-exporter-daemonset.yaml
   - pvc.yaml
   - rbac.yaml
   - service.yaml
+
+configMapGenerator:
+  - name: local-path-pvc-exporter
+    files:
+      - exporter.py=local-path-pvc-exporter.py
