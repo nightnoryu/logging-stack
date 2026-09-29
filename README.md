@@ -20,7 +20,8 @@ Traefik cert resolver named `default` - this can be set up automatically via
 Prometheus discovers each cluster node and scrapes its kubelet `/metrics` endpoint through the
 Kubernetes API server. The `kubernetes-kubelet` job needs `get` access to `nodes/proxy` for this
 route. This permission also grants broad access to kubelet APIs, so protect the Prometheus service
-account token. The Targets page shows one kubelet target per node.
+account token. K3s exposes metrics from other embedded components on the same endpoint, so the job
+keeps only `kubelet_*` metrics. The Targets page shows one kubelet target per node.
 
 Prometheus discovers **pods**, rather than Deployment objects, in every namespace in this
 Kubernetes cluster. A workload is only scraped when its pod template opts in with the annotations

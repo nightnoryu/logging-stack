@@ -28,6 +28,12 @@ data:
               - __meta_kubernetes_node_name
             target_label: __metrics_path__
             replacement: /api/v1/nodes/$1/proxy/metrics
+        # K3s exposes other embedded components' metrics on this endpoint too.
+        metric_relabel_configs:
+          - source_labels:
+              - __name__
+            action: keep
+            regex: kubelet_.*
 
       # Discover opt-in metric endpoints on pods in every namespace.
       - job_name: kubernetes-pods
