@@ -4,12 +4,14 @@ Self-hosted observability stack for my side projects - Grafana, Loki, Alloy and 
 
 ## 📦 Components
 
-| Component    | Kind                   | Image                    | Notes                                                                                         |
-|--------------|------------------------|--------------------------|-----------------------------------------------------------------------------------------------|
-| `alloy`      | DaemonSet              | `grafana/alloy:v1.11.3`  | Tails `/var/log/pods` on each node, parses CRI log lines, pushes to Loki, runs on every node  |
-| `loki`       | Deployment (1 replica) | `grafana/loki:3.5.5`     | Single-binary mode, `auth_enabled: false`, filesystem storage on a PVC, 7d retention          |
-| `grafana`    | Deployment (1 replica) | `grafana/grafana:13.2.2` | Loki and Prometheus pre-provisioned as datasources, PVC for state, and an edge BasicAuth gate |
-| `prometheus` | Deployment (1 replica) | `prom/prometheus:v3.5.0` | Scrapes kubelet metrics and opt-in pod endpoints, with a 7d local retention period             |
+| Component                 | Kind                   | Image                                      | Notes                                                                                         |
+| ------------------------- | ---------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `alloy`                   | DaemonSet              | `grafana/alloy:v1.11.3`                    | Tails `/var/log/pods` on each node, parses CRI log lines, pushes to Loki, runs on every node  |
+| `loki`                    | Deployment (1 replica) | `grafana/loki:3.5.5`                       | Single-binary mode, `auth_enabled: false`, filesystem storage on a PVC, 7d retention          |
+| `grafana`                 | Deployment (1 replica) | `grafana/grafana:13.2.2`                   | Loki and Prometheus pre-provisioned as datasources, PVC for state, and an edge BasicAuth gate |
+| `prometheus`              | Deployment (1 replica) | `prom/prometheus:v3.5.0`                   | Scrapes kubelet metrics and opt-in pod endpoints, with a 7d local retention period            |
+| `node-exporter`           | DaemonSet              | `quay.io/prometheus/node-exporter:v1.12.1` | Exposes host CPU, memory, filesystem, and network metrics on every node                       |
+| `local-path-pvc-exporter` | DaemonSet              | `python:3.13-alpine`                       | Reports allocated disk space for K3s local-path PVC directories on every node                 |
 
 Everything is deployed into the `monitoring` namespace. The Grafana ingress depends on a
 Traefik cert resolver named `default` - this can be set up automatically via
@@ -22,6 +24,11 @@ Kubernetes API server. The `kubernetes-kubelet` job needs `get` access to `nodes
 route. This permission also grants broad access to kubelet APIs, so protect the Prometheus service
 account token. K3s exposes metrics from other embedded components on the same endpoint, so the job
 keeps only `kubelet_*` metrics. The Targets page shows one kubelet target per node.
+
+The `node-exporter` DaemonSet exposes host metrics on port 9100 from every node. It uses the host
+network and process namespaces and mounts the host root read-only so its collectors see node data.
+Prometheus discovers its annotated pods through the `kubernetes-pods` scrape job. Port 9100 must be
+available on each node.
 
 The `local-path-pvc-exporter` DaemonSet reports `local_path_pvc_used_bytes` for PVC directories
 under `/var/lib/rancher/k3s/storage` on each node. It measures allocated disk blocks, like `du`,
@@ -184,6 +191,8 @@ kustomize build --enable-alpha-plugins --enable-exec . | kubectl apply -f -
 kubectl rollout restart deployment/prometheus -n monitoring
 
 kubectl rollout status daemonset/alloy    -n monitoring --timeout=300s
+kubectl rollout status daemonset/node-exporter -n monitoring --timeout=300s
+kubectl rollout status daemonset/local-path-pvc-exporter -n monitoring --timeout=300s
 kubectl rollout status deployment/loki    -n monitoring --timeout=300s
 kubectl rollout status deployment/grafana -n monitoring --timeout=300s
 kubectl rollout status deployment/prometheus -n monitoring --timeout=300s

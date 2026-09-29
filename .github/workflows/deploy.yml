@@ -33,6 +33,8 @@ jobs:
       - name: Wait for rollout
         run: |
           kubectl rollout status daemonset/alloy -n monitoring --timeout=300s
+          kubectl rollout status daemonset/node-exporter -n monitoring --timeout=300s
+          kubectl rollout status daemonset/local-path-pvc-exporter -n monitoring --timeout=300s
           kubectl rollout status deployment/loki -n monitoring --timeout=300s
           kubectl rollout status deployment/prometheus -n monitoring --timeout=300s
           kubectl rollout status deployment/grafana -n monitoring --timeout=300s

@@ -6,6 +6,8 @@ on:
       - 'alloy/**'
       - 'loki/**'
       - 'prometheus/**'
+      - 'node-exporter/**'
+      - 'local-path-pvc-exporter/**'
       - '.github/workflows/ci.yml'
   push:
     branches: [ main ]
@@ -21,7 +23,7 @@ jobs:
     strategy:
       matrix:
         # Root includes grafana, which requires ksops
-        directory: [alloy, loki, prometheus]
+        directory: [alloy, loki, prometheus, node-exporter, local-path-pvc-exporter]
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

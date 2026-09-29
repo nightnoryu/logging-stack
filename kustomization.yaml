@@ -9,3 +9,5 @@ resources:
   - loki
   - alloy
   - prometheus
+  - node-exporter
+  - local-path-pvc-exporter
