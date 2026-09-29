@@ -9,13 +9,18 @@ Self-hosted observability stack for my side projects - Grafana, Loki, Alloy and 
 | `alloy`      | DaemonSet              | `grafana/alloy:v1.11.3`  | Tails `/var/log/pods` on each node, parses CRI log lines, pushes to Loki, runs on every node  |
 | `loki`       | Deployment (1 replica) | `grafana/loki:3.5.5`     | Single-binary mode, `auth_enabled: false`, filesystem storage on a PVC, 7d retention          |
 | `grafana`    | Deployment (1 replica) | `grafana/grafana:13.2.2` | Loki and Prometheus pre-provisioned as datasources, PVC for state, and an edge BasicAuth gate |
-| `prometheus` | Deployment (1 replica) | `prom/prometheus:v3.5.0` | Scrapes opt-in pod metric endpoints in every namespace, with a 7d local retention period      |
+| `prometheus` | Deployment (1 replica) | `prom/prometheus:v3.5.0` | Scrapes kubelet metrics and opt-in pod endpoints, with a 7d local retention period             |
 
 Everything is deployed into the `monitoring` namespace. The Grafana ingress depends on a
 Traefik cert resolver named `default` - this can be set up automatically via
 [ansible-k3s](https://github.com/nightnoryu/ansible-k3s).
 
 ### Metrics from other projects and namespaces
+
+Prometheus discovers each cluster node and scrapes its kubelet `/metrics` endpoint through the
+Kubernetes API server. The `kubernetes-kubelet` job needs `get` access to `nodes/proxy` for this
+route. This permission also grants broad access to kubelet APIs, so protect the Prometheus service
+account token. The Targets page shows one kubelet target per node.
 
 Prometheus discovers **pods**, rather than Deployment objects, in every namespace in this
 Kubernetes cluster. A workload is only scraped when its pod template opts in with the annotations
