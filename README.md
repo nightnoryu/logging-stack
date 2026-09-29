@@ -169,6 +169,10 @@ Then point a DNS record for that host at your ingress.
 ```sh
 kustomize build --enable-alpha-plugins --enable-exec . | kubectl apply -f -
 
+# Prometheus does not automatically reload changes to its ConfigMap.
+# Run this after changing prometheus/configmap.yaml:
+kubectl rollout restart deployment/prometheus -n monitoring
+
 kubectl rollout status daemonset/alloy    -n monitoring --timeout=300s
 kubectl rollout status deployment/loki    -n monitoring --timeout=300s
 kubectl rollout status deployment/grafana -n monitoring --timeout=300s
