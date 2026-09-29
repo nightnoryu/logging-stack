@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - local-path-pvc-exporter-daemonset.yaml
+
+configMapGenerator:
+  - name: local-path-pvc-exporter
+    files:
+      - exporter.py=local-path-pvc-exporter.py
