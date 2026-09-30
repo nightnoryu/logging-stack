@@ -23,3 +23,7 @@ kustomize build --enable-alpha-plugins --enable-exec . | kubectl apply -f -
 - [Deployment and prerequisites](docs/deployment.md)
 - [Metrics and application scraping](docs/metrics.md)
 - [Secrets and Grafana access](docs/security.md)
+
+## 📜 License
+
+Distributed under the MIT License. See [License](/LICENSE) for more information.
